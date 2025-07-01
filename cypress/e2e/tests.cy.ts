@@ -371,4 +371,69 @@ describe('Service Catalog GitHub Tests', () => {
         DeleteService(service)
     })
 
+    it.skip('Create GitHub instance', () => {
+        cy.visit('/eu/service-catalog/integrations')
+
+        cy.get('[data-testid="catalog-item"]').contains('GitHub').click()
+        cy.waitForStableDOM({ timeout: 30000 })
+
+        cy.get('[data-testid="add-instance-button"]').should('be.visible').click()
+
+        cy.get('[data-testid="page-header-title"]').invoke('text')
+            .then((text) => {
+                const match = text.match(/GitHub.*$/);
+                if (match) {
+                    const extracted = match[0];
+                    cy.wrap(extracted).as('instanceName'); //save content for later use
+                    cy.log(`Extracted: ${extracted}`);
+                } else {
+                    throw new Error('Expected instance name not found in text');
+                }
+            });
+
+        //TODO authorize GitHub
+        cy.get('[data-testid="authorize-button"]').click()
+        cy.waitForStableDOM()
+
+        cy.url().then((url) => {
+            // console.log({ url })
+
+            expect(url).to.match(/^https:\/\/github.com\/login/);
+            expect(url).to.match(/integration=konnect-service-catalog/);
+
+            // Extract `return_to` value
+            const returnToMatch = url.match(/return_to=([^&]*)/);
+            const returnToValue = returnToMatch ? decodeURIComponent(returnToMatch[1]) : null;
+
+            cy.log('Return to:', returnToValue);
+
+            // Extract state
+            const stateMatch = returnToValue?.match(/state=([^&]*)/);
+            const state = stateMatch ? stateMatch[1] : null;
+
+            cy.log('State:', state);
+        })
+
+        //verify Kong logo present
+        cy.get('img[alt="Konnect Service Catalog logo"]')
+
+        //TODO auth in GitHub test execution ok till here put in skip as not ready yet
+
+        return //remove once above part is sorted and we get back to Kong integrations
+        // Save
+        cy.get('[data-testid="save-integration-instance-button"]').click()
+        cy.waitForStableDOM()
+
+
+
+
+
+        return
+
+        cy.get('@instanceName').then((instanceName) => {
+            cy.get('altro-selector') // es: '.summary-panel'
+                .should('contain.text', instanceName as string);
+        });
+    })
+
 });
