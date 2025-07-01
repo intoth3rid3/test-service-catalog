@@ -15,8 +15,8 @@
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/your-org/konnect-ui-tests.git
-cd konnect-ui-tests
+git clone https://github.com/intoth3rid3/test-service-catalog.git
+cd test-service-catalog
 ```
 
 2. **Install dependencies**
