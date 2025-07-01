@@ -7,7 +7,6 @@ describe('Service Catalog GitHub Tests', () => {
 
         //verify correct info in table
         cy.contains('td', elementName).parents('tr').as('tableRow')
-
         cy.waitForStableDOM()
 
         if (!bulk) {
@@ -31,7 +30,6 @@ describe('Service Catalog GitHub Tests', () => {
 
             menuOption && cy.contains('[data-testid="dropdown-list"] [data-testid="dropdown-item-trigger"]', menuOption).click()
         }
-
     }
 
     const CreateService = (service: { name: string, internalName: string }, verifyGui?: boolean): void => {
@@ -52,7 +50,6 @@ describe('Service Catalog GitHub Tests', () => {
         cy.get('[data-testid="service-name"]').should('have.value', service.internalName)
         cy.get('@createBtnModal').should('not.be.disabled')
         cy.get('@createBtnModal').click()
-
 
         cy.wait('@createService').then(({ response }) => {
             expect(response?.statusCode).to.eq(201);
@@ -77,15 +74,11 @@ describe('Service Catalog GitHub Tests', () => {
                 /^\d{4}-\d{2}-\d{2}T/
             );
 
-
             //Verify success also in GUI
             verifyGui && cy.get('.toaster-message').contains('Successfully created service and mapped 1 resource')
             verifyGui && cy.get('.toaster-icon-container [data-testid="kui-icon-wrapper-check-circle-icon"]')
         });
     }
-
-
-
 
     const DeleteService = (service: { name: string, internalName: string }): void => {
         //Delete service and verify operation
@@ -145,9 +138,6 @@ describe('Service Catalog GitHub Tests', () => {
         cy.intercept('DELETE', '**/servicehub/v1/services').as('deleteService')
         cy.intercept('POST', '**/services/**/resources').as('createResource')
 
-
-
-
         cy.loginWithSession();
     })
 
@@ -156,7 +146,6 @@ describe('Service Catalog GitHub Tests', () => {
         cy.intercept('PUT', '**/servicehub/v1/discovery/integration-instances/**/ingestion').as('ingestion');
 
         cy.visit('/eu/service-catalog/integrations/github/instances')
-
 
         //open integration detail
         cy.get('td', { timeout: 20000 }).contains('GitHub').click()
@@ -214,13 +203,44 @@ describe('Service Catalog GitHub Tests', () => {
             cy.get('.toaster-icon-container [data-testid="kui-icon-wrapper-check-circle-icon"]')
         });
 
-
     })
+
+    it('Handles backend error during sync from inline menu', () => {
+        // Simulate 500 error in PUT request
+        cy.intercept('PUT', '**/servicehub/v1/discovery/integration-instances/**/ingestion', {
+            statusCode: 500,
+            body: {
+                message: 'Internal Server Error',
+            },
+        }).as('ingestion');
+
+        cy.visit('/eu/service-catalog/integrations/github/instances');
+        cy.waitForStableDOM();
+
+        cy.get('input[type="search"]').type('GitHub');
+
+        // Verify table content
+        cy.contains('td', 'GitHub').parents('tr').as('tableRow');
+        cy.get('@tableRow').find('.authorized').contains('Authorized');
+        cy.get('@tableRow').find('.instance-name').contains('github');
+        cy.get('@tableRow').find('.integration-data').contains('1');
+
+        OpenMenu('GitHub', 'Sync Now');
+
+        //Wait network request with simulated error
+        cy.wait('@ingestion').then(({ response }) => {
+            expect(response?.statusCode).to.eq(500);
+            expect(response?.body).to.have.property('message', 'Internal Server Error');
+        });
+
+        //Verify UI gritter erro
+        cy.get('.toaster-message')
+            .should('exist')
+            .and('contain', 'An error occurred while scheduling a sync: Internal Server Error.')
+    });
 
     it('Navigate to Resources and locate a discovered GitHub repository', () => {
         cy.visit('/eu/service-catalog/resources/resources-list')
-
-
 
         cy.get('[data-testid="page-header-title"]').contains('Resources')
 
@@ -250,9 +270,6 @@ describe('Service Catalog GitHub Tests', () => {
 
         cy.visit('/eu/service-catalog/resources/resources-list')
 
-
-
-
         cy.waitForStableDOM({ pollInterval: 1000, timeout: 20000 });
 
         cy.get('[data-testid="page-header-title"').contains('Resources')
@@ -261,15 +278,11 @@ describe('Service Catalog GitHub Tests', () => {
         cy.get('[data-testid="resources-search"]').type(GitHubRepoName)
         cy.waitForStableDOM({ pollInterval: 1000, timeout: 20000 });
 
-
         OpenMenu('GitHub', 'Create Service')
 
         CreateService(service, true)
 
         DeleteService(service)
-
-
-
     })
 
 
@@ -319,7 +332,6 @@ describe('Service Catalog GitHub Tests', () => {
             }
         });
 
-
         CreateService(service)
 
         cy.url().should('match', /service-catalog\/[0-9a-f-]{36}\/overview#/);
@@ -355,10 +367,8 @@ describe('Service Catalog GitHub Tests', () => {
             });
 
         }
-
         //cleanup
         DeleteService(service)
     })
-
 
 });
