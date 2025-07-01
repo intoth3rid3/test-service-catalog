@@ -50,3 +50,4 @@ Due to CAPTCHA and MFA, tests currently must be run with a visible browser with 
 📦 Headless test support for CI/CD
 
 🔁 Stable DOM interaction improvements
+
