@@ -1,1 +1,1 @@
-# kong-service-catalog
+# test-service-catalog
